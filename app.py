@@ -194,7 +194,7 @@ if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)                  password_hash TEXT,
                   verified INTEGER DEFAULT 0,
                   verification_code TEXT,
-                  code_expires DATETIME)''')
+                  code_expires DATETIME)
     conn.commit()
     conn.close()
 
