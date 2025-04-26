@@ -10,7 +10,7 @@ import random
 from datetime import datetime, timedelta
 
 app = Flask(__name__)
-app.secret_key = os.environ.get('SECRET_KEY', 'b'_5#y2L"F4Q8znxec]/')
+app.secret_key = os.environ.get('SECRET_KEY', 'DarkSearch')
 
 # Конфиг Telegram с ВАШЕЙ сессией
 TG_SESSION = "1ApWapzMBuzlg5kbC1qweYA5ZT3MSHLcQB5PioEv0svE5RXgmdYRJFOCucCd9Bes_iGkb7pjLsqroPbht67tP6AyluObcfvut7fGBCC__xcs3-2_AEFBC26QcPcCGr2X2NQ9dPIOD_n28NZiSDZq8OA8ICJn58UkFXvoWcW_M-OXRBQLni7cEMI5h90Oon5VcUHgevuI3mD_pOYaNCajgdR1iRejeaRRhmRHlwEqisJ5y7FTEslJYpHgTiX_QQSJspTc1FNb8-XHIwAsmnGko_ZmHFqogMQkEoxILSZUhw4ux7VM1D4loFgGElqk0hNY9Su4xHL4RsLkKZ5VKAj5kFs0KmfSqG9Y="
