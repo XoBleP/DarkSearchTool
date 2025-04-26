@@ -1,4 +1,4 @@
-flask==2.3.2
-flask-mail==0.9.1
-telethon==1.28.5
-sqlite3==2.6.0
+flask
+flask-mail
+telethon
+sqlite3
