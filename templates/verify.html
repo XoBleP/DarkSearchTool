@@ -1,0 +1,21 @@
+<div class="auth-container">
+    <h1>Подтверждение Email</h1>
+    <p>Мы отправили код на {{ session['temp_email'] }}</p>
+    
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            <div class="error">
+                {{ messages[0] }}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <form method="POST" action="/verify">
+        <div class="form-group">
+            <label for="code">Код подтверждения</label>
+            <input type="text" id="code" name="code" required>
+        </div>
+        
+        <button type="submit">Подтвердить</button>
+    </form>
+</div>
