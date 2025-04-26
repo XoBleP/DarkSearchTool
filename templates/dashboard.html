@@ -1,0 +1,51 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>DarkSearchTool</title>
+    <style>
+        body { font-family: Arial; background: #121212; color: white; }
+        .container { max-width: 800px; margin: 50px auto; padding: 20px; background: #1e1e1e; border-radius: 5px; }
+        .search-box { margin: 20px 0; }
+        input, button { padding: 10px; background: #333; border: none; color: white; }
+        #results { margin-top: 20px; white-space: pre-wrap; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Добро пожаловать, {{ session.user }}!</h1>
+        <a href="{{ url_for('logout') }}">Выйти</a>
+
+        <div class="search-box">
+            <h3>Поиск по номеру</h3>
+            <input type="text" id="phone" placeholder="+79991234567">
+            <button onclick="search('phone')">Поиск</button>
+        </div>
+
+        <div class="search-box">
+            <h3>Поиск по username</h3>
+            <input type="text" id="username" placeholder="username">
+            <button onclick="search('username')">Поиск</button>
+        </div>
+
+        <div id="results"></div>
+    </div>
+
+    <script>
+        async function search(type) {
+            const query = document.getElementById(type).value;
+            if (!query) return;
+
+            const response = await fetch('/api/search', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ type, query })
+            });
+
+            const data = await response.json();
+            document.getElementById('results').innerHTML = 
+                JSON.stringify(data, null, 2);
+        }
+    </script>
+</body>
+</html>
