@@ -2,6 +2,7 @@ from flask import Flask, request, jsonify, render_template, session, redirect, u
 from flask_mail import Mail, Message
 from telethon.sync import TelegramClient
 from telethon.sessions import StringSession
+from telethon.tl.functions.messages import SendMessageRequest
 import sqlite3
 import hashlib
 import os
@@ -9,24 +10,23 @@ import random
 from datetime import datetime, timedelta
 
 app = Flask(__name__)
-app.secret_key = 'ieysboaurgeoqwiqnzoruwifh'
+app.secret_key = os.environ.get('SECRET_KEY', 'b'_5#y2L"F4Q8znxec]/')
 
-# Конфигурация Telegram (ваши данные)
+# Конфиг Telegram с ВАШЕЙ сессией
 TG_SESSION = "1ApWapzMBuzlg5kbC1qweYA5ZT3MSHLcQB5PioEv0svE5RXgmdYRJFOCucCd9Bes_iGkb7pjLsqroPbht67tP6AyluObcfvut7fGBCC__xcs3-2_AEFBC26QcPcCGr2X2NQ9dPIOD_n28NZiSDZq8OA8ICJn58UkFXvoWcW_M-OXRBQLni7cEMI5h90Oon5VcUHgevuI3mD_pOYaNCajgdR1iRejeaRRhmRHlwEqisJ5y7FTEslJYpHgTiX_QQSJspTc1FNb8-XHIwAsmnGko_ZmHFqogMQkEoxILSZUhw4ux7VM1D4loFgGElqk0hNY9Su4xHL4RsLkKZ5VKAj5kFs0KmfSqG9Y="
 TG_API_ID = 28745328
 TG_API_HASH = "99b7d5e0faedd6ddae2ebb8d792a763c"
 BOT_USERNAME = "EnergyGram_robot"
 
-# Конфигурация почты (ваши данные)
+# Конфиг почты
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 587
 app.config['MAIL_USE_TLS'] = True
 app.config['MAIL_USERNAME'] = 'swoolwh@gmail.com'
 app.config['MAIL_PASSWORD'] = '22012013Dfd'
-app.config['MAIL_DEFAULT_SENDER'] = 'swoolwh@gmail.com'
 mail = Mail(app)
 
-# Инициализация БД
+# Исправленная инициализация БД
 def init_db():
     conn = sqlite3.connect('database.db')
     c = conn.cursor()
@@ -42,9 +42,6 @@ def init_db():
     conn.close()
 
 init_db()
-
-def generate_verification_code():
-    return str(random.randint(100000, 999999))
 
 @app.route('/')
 def index():
@@ -70,10 +67,9 @@ def login():
             if user[4]:  # Проверка verified
                 session['user'] = username
                 return redirect(url_for('dashboard'))
-            else:
-                flash('Аккаунт не подтвержден. Проверьте почту.')
+            flash('Подтвердите email')
         else:
-            flash('Неверный логин или пароль')
+            flash('Неверные данные')
     return render_template('login.html')
 
 @app.route('/register', methods=['GET', 'POST'])
@@ -87,7 +83,7 @@ def register():
             flash('Заполните все поля')
             return redirect(url_for('register'))
 
-        code = generate_verification_code()
+        code = str(random.randint(100000, 999999))
         expires = datetime.now() + timedelta(minutes=30)
         password_hash = hashlib.sha256(password.encode()).hexdigest()
 
@@ -102,18 +98,18 @@ def register():
             
             # Отправка письма
             msg = Message(
-                subject="Подтверждение регистрации DarkSearchTool",
+                subject="Подтверждение DarkSearchTool",
                 recipients=[email],
-                body=f"Ваш код подтверждения: {code}"
+                body=f"Ваш код: {code}"
             )
             mail.send(msg)
             
             session['temp_user'] = username
             return redirect(url_for('verify'))
-        except sqlite3.IntegrityError as e:
-            flash('Email или username уже заняты')
+        except sqlite3.IntegrityError:
+            flash('Email/username уже заняты')
         except Exception as e:
-            flash('Ошибка при регистрации')
+            flash('Ошибка сервера')
             app.logger.error(f"Ошибка регистрации: {str(e)}")
         finally:
             conn.close()
@@ -140,7 +136,7 @@ def verify():
             conn.close()
             return redirect(url_for('dashboard'))
         
-        flash('Неверный или просроченный код')
+        flash('Неверный код')
         conn.close()
     return render_template('verify.html')
 
@@ -161,149 +157,24 @@ def api_search():
 
     try:
         with TelegramClient(StringSession(TG_SESSION), TG_API_ID, TG_API_HASH) as client:
+            # Отправка команды боту
             if data['type'] == 'phone':
-                # Поиск по номеру
-                result = client(SendMessageRequest(
-                    peer=BOT_USERNAME,
-                    message=f"/search_phone {data['query']}"
-                ))
+                message = f"/search_phone {data['query']}"
             elif data['type'] == 'username':
-                # Поиск по юзернейму
-                result = client(SendMessageRequest(
-                    peer=BOT_USERNAME,
-                    message=f"/search_username {data['query']}"
-                ))
+                message = f"/search_username {data['query']}"
             else:
-                return jsonify({"error": "Invalid search type"}), 400
+                return jsonify({"error": "Invalid type"}), 400
+
+            client(SendMessageRequest(
+                peer=BOT_USERNAME,
+                message=message
+            ))
             
-            # Получаем ответ от бота
+            # Получение ответа
             messages = client.get_messages(BOT_USERNAME, limit=1)
             return jsonify({
                 "status": "success",
                 "result": messages[0].message
-            })
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-@app.route('/logout')
-def logout():
-    session.pop('user', None)
-    return redirect(url_for('login'))
-
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)                  password_hash TEXT,
-                  verified INTEGER DEFAULT 0,
-                  verification_code TEXT,
-                  code_expires DATETIME)
-    conn.commit()
-    conn.close()
-
-init_db()
-
-@app.route('/')
-def index():
-    return redirect(url_for('login'))
-
-@app.route('/login', methods=['GET', 'POST'])
-def login():
-    if request.method == 'POST':
-        username = request.form['username']
-        password = hashlib.sha256(request.form['password'].encode()).hexdigest()
-
-        conn = sqlite3.connect('database.db')
-        c = conn.cursor()
-        c.execute("SELECT * FROM users WHERE username=? AND password_hash=?", (username, password))
-        user = c.fetchone()
-        conn.close()
-
-        if user:
-            session['user'] = username
-            return redirect(url_for('dashboard')
-        flash('Неверные данные')
-    return render_template('login.html')
-
-@app.route('/register', methods=['GET', 'POST'])
-def register():
-    if request.method == 'POST':
-        email = request.form['email']
-        username = request.form['username']
-        password = hashlib.sha256(request.form['password'].encode()).hexdigest()
-        code = str(random.randint(100000, 999999))
-        expires = datetime.now() + timedelta(minutes=30)
-
-        try:
-            conn = sqlite3.connect('database.db')
-            c = conn.cursor()
-            c.execute("INSERT INTO users (email, username, password_hash, verification_code, code_expires) VALUES (?, ?, ?, ?, ?)",
-                      (email, username, password, code, expires))
-            conn.commit()
-            
-            # Отправка кода на почту
-            msg = Message('Код подтверждения', sender='swoolwh@gmail.com', recipients=[email])
-            msg.body = f'Ваш код подтверждения: {code}'
-            mail.send(msg)
-            
-            session['temp_user'] = username
-            return redirect(url_for('verify'))
-        except sqlite3.IntegrityError:
-            flash('Пользователь уже существует')
-        finally:
-            conn.close()
-    return render_template('register.html')
-
-@app.route('/verify', methods=['GET', 'POST'])
-def verify():
-    if 'temp_user' not in session:
-        return redirect(url_for('register'))
-
-    if request.method == 'POST':
-        user_code = request.form['code']
-        
-        conn = sqlite3.connect('database.db')
-        c = conn.cursor()
-        c.execute("UPDATE users SET verified=1 WHERE username=? AND verification_code=? AND code_expires > datetime('now')",
-                  (session['temp_user'], user_code))
-        conn.commit()
-        
-        if c.rowcount > 0:
-            session['user'] = session.pop('temp_user')
-            conn.close()
-            return redirect(url_for('dashboard'))
-        
-        flash('Неверный код')
-        conn.close()
-    return render_template('verify.html')
-
-@app.route('/dashboard')
-def dashboard():
-    if 'user' not in session:
-        return redirect(url_for('login'))
-    return render_template('dashboard.html', username=session['user']))
-
-@app.route('/api/search', methods=['POST'])
-def api_search():
-    if 'user' not in session:
-        return jsonify({"error": "Unauthorized"}), 401
-
-    data = request.json
-    search_type = data.get('type')
-    query = data.get('query')
-
-    if not all([search_type, query]):
-        return jsonify({"error": "Missing parameters"}), 400
-
-    try:
-        with TelegramClient(StringSession(TG_SESSION), TG_API_ID, TG_API_HASH) as client:
-            # Отправляем запрос боту
-            await client.send_message(BOT_USERNAME, f"/{search_type} {query}")
-            
-            # Получаем последнее сообщение от бота
-            messages = await client.get_messages(BOT_USERNAME, limit=1)
-            result = messages[0].message
-            
-            return jsonify({
-                "status": "success",
-                "result": result
             })
     except Exception as e:
         return jsonify({"error": str(e)}), 500
