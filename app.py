@@ -61,7 +61,7 @@ def login():
 
         if user:
             session['user'] = username
-            return redirect(url_for('dashboard'))
+            return redirect(url_for('dashboard')
         flash('Неверные данные')
     return render_template('login.html')
 
@@ -92,7 +92,7 @@ def register():
             flash('Пользователь уже существует')
         finally:
             conn.close()
-    return render_template('register.html'))
+    return render_template('register.html')
 
 @app.route('/verify', methods=['GET', 'POST'])
 def verify():
@@ -115,7 +115,7 @@ def verify():
         
         flash('Неверный код')
         conn.close()
-    return render_template('verify.html'))
+    return render_template('verify.html')
 
 @app.route('/dashboard')
 def dashboard():
